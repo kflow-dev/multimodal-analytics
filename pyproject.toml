@@ -1,0 +1,15 @@
+[project]
+name = "multimodal_analytics"
+version = "0.1.0"
+description = "Part of the Data Services Portfolio."
+authors = [{name="Auto Generator"}]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    # Add project dependencies here
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
