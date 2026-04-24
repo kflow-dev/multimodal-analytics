@@ -1,4 +1,4 @@
-# RAG Anything — Multimodal Document Processing & Retrieval Pipeline
+# AIFluent - Multimodal Document Processing & Retrieval Pipeline
 
 A unified pipeline for multimodal document parsing, retrieval-augmented generation (RAG), and query optimization. Combines document parsing, multimodal content processing, hybrid retrieval, and evaluation in a single framework.
 
@@ -19,9 +19,80 @@ This project provides:
 ### Installation
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip setuptools wheel
 pip install -e .
 pip install -e ".[dev,notebooks]"
 ```
+
+### Local End-to-End Run
+
+The repository includes [`run_local.py`](./run_local.py) for a practical local flow using
+LightRAG's OpenAI-compatible model adapters.
+
+1. Create an environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Fill in at least `OPENAI_API_KEY` in `.env`
+
+3. Load the environment and run:
+
+```bash
+set -a
+source .env
+set +a
+
+python run_local.py ingest data/raw/sample.pdf
+python run_local.py query "What is this document about?" --mode mix
+```
+
+You can also ingest and query in one step:
+
+```bash
+python run_local.py ingest-and-query data/raw/sample.pdf "Summarize the document"
+```
+
+Search + ingest from local folders, URL manifests, or a direct URL:
+
+```bash
+python run_local.py search-ingest \
+  --keywords genai,rag \
+  --document-types pdf,text \
+  --input-location data/raw \
+  --output-location ./output
+```
+
+Minimal web UI for the same workflow:
+
+```bash
+python run_local.py serve-ui --host 127.0.0.1 --port 8080
+```
+
+Index and query the local showcase dataset with parameterized techniques:
+
+```bash
+python run_local.py showcase-rag \
+  --input-location ./data/raw/showcase \
+  --output-location ./output/showcase \
+  --parser mineru \
+  --parse-method auto \
+  --query-mode mix \
+  --query-optimization-strategy all \
+  --summarize \
+  --query-text "What entities and relations are present in the showcase dataset?"
+```
+
+Notes:
+
+- `run_local.py` expects `lightrag` and its OpenAI helper modules to be installed via project dependencies.
+- If `lightrag` is not installed, `run_local.py` can also import it from `LIGHTRAG_SOURCE_DIR` and defaults to `./data/vendor/000_LightRAG`.
+- `openai` is an explicit dependency here because the local runner uses `lightrag.llm.openai`.
+- Parser-specific runtimes such as LibreOffice may still be required depending on file type and parser choice.
+- `OPENAI_BASE_URL` can be used for OpenAI-compatible providers, not just OpenAI itself.
 
 ### Jupyter Notebooks
 
@@ -36,7 +107,10 @@ The project follows a staged notebook structure:
 | Stage | Notebook | Description |
 |-------|----------|-------------|
 | S00 | `s00_pipeline_setup.ipynb` | Pipeline initialization and configuration |
+| S00+ | `s00_create_sample_input_dataset.ipynb` | Uses OpenAI web search and/or Google Custom Search to discover and download sample assets into `./data/raw/showcase`, then builds a thesaurus summary |
 | S01 | `s01_document_ingestion.ipynb` | Document parsing and insertion |
+| S01+ | `s01_search_download_ingestion_showcase.ipynb` | Search, local download, ingestion, and thesaurus-style inventory showcase |
+| S02+ | `s02_showcase_rag_pipeline.ipynb` | Indexes `./data/raw/showcase`, creates embeddings, extracts entities and relations, summarizes the thesaurus, visualizes graph/thesaurus snapshots, and runs Q&A |
 | S02 | `s02_multimodal_processing.ipynb` | Multimodal content processing |
 | S03 | `s03_query_optimization.ipynb` | Query analysis and optimization |
 | S04 | `s04_evaluation.ipynb` | Retrieval evaluation |
@@ -67,7 +141,7 @@ print(result)
 # Ingest documents
 python -m src.cli ingest data/raw/sample.pdf --method auto
 
-# Query
+# Query (works after LightRAG storage has been initialized)
 python -m src.cli query "What is the key finding?"
 
 # Evaluate
@@ -150,9 +224,3 @@ mypy aifluent/ evaluation/ src/
 # Linting
 ruff check .
 ```
-
-## References
-
-- **AIFluent**: Document parsing and multimodal processing from [AIFluent](https://github.com/kflow-dev/aifluent)
-- **Production RAG**: Retrieval and evaluation from [production-rag](https://github.com/kflow-dev/production-rag)
-- **Notebook structure**: Following the [artificial-data-generation](https://github.com/kflow-dev/artificial-data-generation) convention

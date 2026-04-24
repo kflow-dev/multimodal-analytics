@@ -65,6 +65,9 @@ class AIFluent(QueryMixin, ProcessorMixin, BatchMixin):
 
     # Evaluation
     _evaluation_results: Dict[str, Any] = field(default_factory=dict, init=False)
+    _lightrag_storages_initialized: bool = field(
+        default=False, init=False, repr=False
+    )
 
     def __post_init__(self):
         if self.config is None:
@@ -135,13 +138,20 @@ class AIFluent(QueryMixin, ProcessorMixin, BatchMixin):
     async def _ensure_lightrag_initialized(self) -> None:
         """Ensure LightRAG is initialized."""
         if self.lightrag is None:
-            from aifluent.utils import get_processor_supports
             self.lightrag = LightRAG(
                 working_dir=self.working_dir,
                 llm_model_func=self.llm_model_func,
                 embedding_func=self.embedding_func,
                 **self.lightrag_kwargs,
             )
+
+        if not self._lightrag_storages_initialized:
+            if hasattr(self.lightrag, "initialize_storages"):
+                await self.lightrag.initialize_storages()
+            if hasattr(self.lightrag, "initialize_pipeline_status"):
+                await self.lightrag.initialize_pipeline_status()
+            self._lightrag_storages_initialized = True
+
         self.logger.info("LightRAG instance initialized")
 
     def get_config_info(self) -> Dict[str, Any]:

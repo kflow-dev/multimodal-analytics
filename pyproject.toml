@@ -16,6 +16,7 @@ dependencies = [
     "mineru>=1.0.0",
     "docling>=2.0.0",
     "paddleocr>=2.7.0",
+    "openai>=2.0.0,<3.0.0",
     "python-dotenv>=1.0.0",
     "numpy>=1.24.3",
     "scipy>=1.11.1",

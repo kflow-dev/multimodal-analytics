@@ -5,6 +5,11 @@ import seaborn as sns
 from typing import List, Dict, Optional
 import numpy as np
 
+try:
+    import networkx as nx
+except ImportError:  # pragma: no cover
+    nx = None
+
 
 def plot_retrieval_comparison(
     results: Dict[str, Dict[str, float]],
@@ -114,6 +119,76 @@ def plot_processing_timeline(
 
     ax.set_xlabel("Duration (seconds)")
     ax.set_title(title)
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    return fig
+
+
+def plot_thesaurus_distribution(
+    groups: Dict[str, int],
+    title: str = "Document Thesaurus Distribution",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    labels = list(groups.keys())
+    values = list(groups.values())
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    colors = sns.color_palette("crest", len(values) or 1)
+    ax.bar(labels, values, color=colors)
+    ax.set_title(title)
+    ax.set_ylabel("File Count")
+    ax.tick_params(axis="x", rotation=45)
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    return fig
+
+
+def plot_knowledge_graph(
+    graph_summary: Dict[str, List[Dict]],
+    title: str = "Knowledge Graph Snapshot",
+    save_path: Optional[str] = None,
+) -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    if nx is None:
+        ax.text(0.5, 0.5, "networkx is not installed", ha="center", va="center")
+        ax.axis("off")
+        return fig
+
+    graph = nx.Graph()
+    for node in graph_summary.get("nodes", []):
+        node_id = node.get("id") or node.get("entity_id") or node.get("entity_name")
+        if node_id:
+            graph.add_node(node_id)
+
+    for edge in graph_summary.get("edges", []):
+        source = edge.get("source") or edge.get("src_id")
+        target = edge.get("target") or edge.get("tgt_id")
+        if source and target:
+            graph.add_edge(source, target)
+
+    if graph.number_of_nodes() == 0:
+        ax.text(0.5, 0.5, "No graph nodes available", ha="center", va="center")
+        ax.axis("off")
+        return fig
+
+    positions = nx.spring_layout(graph, seed=42)
+    nx.draw_networkx(
+        graph,
+        pos=positions,
+        ax=ax,
+        node_size=900,
+        font_size=8,
+        width=1.2,
+        node_color="#9ecae1",
+        edge_color="#6b7280",
+    )
+    ax.set_title(title)
+    ax.axis("off")
     plt.tight_layout()
 
     if save_path:
